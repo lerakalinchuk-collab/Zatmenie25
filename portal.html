@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Портал</title>
+<style>
+body{
+margin:0;
+background:black;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+font-family:Arial;
+}
+
+.container{
+text-align:center;
+}
+
+input{
+padding:10px;
+background:black;
+border:1px solid white;
+color:white;
+}
+
+button{
+padding:10px 20px;
+margin-top:10px;
+background:black;
+border:1px solid white;
+color:white;
+cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Рунический круг</h2>
+<p>Введите код</p>
+<input type="password" id="code">
+<br>
+<button onclick="check()">Открыть</button>
+<div id="result"></div>
+</div>
+
+<script>
+function check(){
+let code=document.getElementById("code").value;
+if(code==="1313"){
+document.getElementById("result").innerText="Печать сломана...";
+}else{
+document.getElementById("result").innerText="Неверный код";
+}
+}
+</script>
+
+</body>
+</html>
