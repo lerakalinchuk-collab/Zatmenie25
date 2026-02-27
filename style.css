@@ -1,0 +1,67 @@
+body{
+margin:0;
+background:#050510;
+color:white;
+font-family:Georgia, serif;
+overflow-x:hidden;
+}
+
+.hero{
+height:100vh;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+text-align:center;
+position:relative;
+}
+
+h1{
+font-size:60px;
+letter-spacing:10px;
+text-shadow:0 0 20px purple;
+}
+
+.moon{
+width:200px;
+height:200px;
+border-radius:50%;
+background:radial-gradient(circle at 30% 30%,#ddd,#222);
+box-shadow:0 0 80px rgba(255,255,255,0.3);
+margin-bottom:30px;
+}
+
+.symbols{
+text-align:center;
+font-size:30px;
+opacity:0.5;
+animation:fade 4s infinite alternate;
+}
+
+@keyframes fade{
+from{opacity:0.3;}
+to{opacity:0.8;}
+}
+
+.sections{
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:20px;
+padding:50px;
+}
+
+.portal{
+padding:15px 30px;
+border:1px solid rgba(255,255,255,0.4);
+border-radius:30px;
+text-decoration:none;
+color:white;
+backdrop-filter:blur(10px);
+transition:0.4s;
+}
+
+.portal:hover{
+background:rgba(150,0,255,0.3);
+transform:scale(1.1);
+}
