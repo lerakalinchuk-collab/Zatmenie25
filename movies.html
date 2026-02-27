@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Кинозал</title>
+<style>
+body{
+margin:0;
+background:black;
+color:white;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+font-family:Arial;
+}
+
+#dice{
+font-size:100px;
+cursor:pointer;
+transition:0.3s;
+}
+
+#movie{
+margin-top:20px;
+font-size:20px;
+}
+
+.fade{
+animation:fade 1s;
+}
+
+@keyframes fade{
+from{opacity:0;}
+to{opacity:1;}
+}
+</style>
+</head>
+<body>
+
+<h1>Тёмный кинозал</h1>
+<div id="dice">🎲</div>
+<div id="movie"></div>
+
+<script>
+let movies=[
+"Брат",
+"Оно",
+"Supernatural",
+"Interstellar",
+"Ведьма"
+];
+
+document.getElementById("dice").onclick=function(){
+let random = movies[Math.floor(Math.random()*movies.length)];
+let movieDiv=document.getElementById("movie");
+movieDiv.classList.remove("fade");
+void movieDiv.offsetWidth;
+movieDiv.classList.add("fade");
+movieDiv.innerText=random;
+};
+</script>
+
+</body>
+</html>
