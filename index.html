@@ -2,206 +2,742 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>ЗАТМЕНИЕ 25</title>
-<link rel="stylesheet" href="style.css">
-<style>
-/* ===== ОБЩИЕ СТИЛИ ===== */
-body, html{
-  margin:0;
-  padding:0;
-  width:100%;
-  height:100%;
-  font-family:Georgia, serif;
-  background:#050510;
-  color:white;
-  overflow:hidden;
-}
-
-/* ===== ЭКРАН ПАРОЛЯ ===== */
-#loginScreen{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#000814;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  z-index:100;
-}
-
-#loginScreen input{
-  padding:15px;
-  font-size:18px;
-  border-radius:10px;
-  border:none;
-  margin-bottom:20px;
-  width:250px;
-  text-align:center;
-}
-
-#loginScreen button{
-  padding:12px 25px;
-  font-size:18px;
-  border-radius:10px;
-  border:none;
-  background:#c084fc;
-  color:black;
-  cursor:pointer;
-  transition:0.3s;
-}
-
-#loginScreen button:hover{
-  background:#60a5fa;
-}
-
-/* ===== ГЛАВНЫЙ КОНТЕНТ ===== */
-#mainContent{
-  display:none; /* Скрыт, пока пароль не введен */
-}
-
-.hero{
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  position:relative;
-}
-
-h1{
-  font-size:60px;
-  letter-spacing:10px;
-  text-shadow:0 0 20px purple;
-}
-
-.moon{
-  width:200px;
-  height:200px;
-  border-radius:50%;
-  background:radial-gradient(circle at 30% 30%,#ddd,#222);
-  box-shadow:0 0 80px rgba(255,255,255,0.3);
-  margin-bottom:30px;
-}
-
-.symbols{
-  text-align:center;
-  font-size:30px;
-  opacity:0.5;
-  animation:fade 4s infinite alternate;
-}
-
-@keyframes fade{
-  from{opacity:0.3;}
-  to{opacity:0.8;}
-}
-
-.sections{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:20px;
-  padding:50px;
-}
-
-.portal{
-  padding:15px 30px;
-  border:1px solid rgba(255,255,255,0.4);
-  border-radius:30px;
-  text-decoration:none;
-  color:white;
-  backdrop-filter:blur(10px);
-  transition:0.4s;
-}
-
-.portal:hover{
-  background:rgba(150,0,255,0.3);
-  transform:scale(1.1);
-}
-</style>
+<link rel="stylesheet" href="css/main.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌑</text></svg>">
 </head>
-
 <body>
 
-<!-- ЭКРАН ПАРОЛЯ -->
+<!-- ── CANVAS LAYERS ─────────────────────────────────────────────────────── -->
+<canvas id="starCanvas"></canvas>
+<canvas id="fogCanvas"></canvas>
+<div id="eclipseTransition"></div>
+<div id="particleOverlay"></div>
+
+<!-- ── LOGIN SCREEN ─────────────────────────────────────────────────────── -->
 <div id="loginScreen">
-  <h2>Введите секретный код</h2>
-  <input type="password" id="passwordInput" placeholder="Пароль">
-  <button onclick="checkPassword()">Войти</button>
+  <div class="login-eclipse">
+    <div class="moon-orbit-1"><div class="moon-orbit-dot"></div></div>
+  </div>
+  <div class="login-title">ЗАТМЕНИЕ 25</div>
+  <div class="login-subtitle">протокол синхронизации · доступ ограничен</div>
+  <div class="login-rune-row">
+    <span>ᚨ</span><span>ᛟ</span><span>✶</span><span>ᛉ</span><span>ᚱ</span>
+  </div>
+  <form class="login-form" onsubmit="checkPassword();return false;">
+    <input type="text" name="username" autocomplete="username" style="display:none" value="eclipse25">
+    <div class="password-wrapper">
+      <input type="password" id="passwordInput" placeholder="секретный код"
+             autocomplete="current-password" maxlength="20">
+    </div>
+    <button type="submit" class="login-btn">ВОЙТИ В МИР</button>
+    <div class="login-error" id="loginError">неверный код доступа</div>
+  </form>
 </div>
 
-<!-- ГЛАВНЫЙ КОНТЕНТ -->
+<!-- ── MAIN CONTENT ──────────────────────────────────────────────────────── -->
 <div id="mainContent">
 
-<canvas id="fog"></canvas>
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-logo">ЗАТМЕНИЕ 25</div>
+    <div class="top-bar-stats">
+      <div class="stat-item">
+        <span>⭐</span>
+        <span class="stat-value star-count-display">0</span>
+      </div>
+      <div class="stat-item">
+        <span id="moonPhaseIcon">🌑</span>
+        <span style="font-size:0.72rem" id="moonPhaseName">Новолуние</span>
+      </div>
+      <div class="stat-item">
+        <span>⚡</span>
+        <span class="stat-value" id="topEnergyVal">5</span>
+      </div>
+    </div>
+  </div>
 
-<div class="hero">
-  <div class="moon"></div>
-  <h1>ЗАТМЕНИЕ 25</h1>
-  <p>Сверхъестественный протокол синхронизации</p>
+  <!-- ── HOME PAGE ─────────────────────────────────────────────────────── -->
+  <div id="homePage" class="app-page">
+
+    <!-- HERO -->
+    <section class="hero-section">
+      <div class="moon-container">
+        <div class="moon-sphere"></div>
+        <div class="moon-orbit-1"><div class="moon-orbit-dot"></div></div>
+        <div class="moon-orbit-2"></div>
+        <div class="moon-orbit-3"></div>
+      </div>
+      <div class="moon-phase-display">
+        <span id="moonPhaseSymbol">🌑</span>
+        <div class="moon-phase-name" id="moonPhaseLabel">Новолуние</div>
+      </div>
+      <h1 class="hero-title">ЗАТМЕНИЕ&nbsp;25</h1>
+      <p class="hero-subtitle">тайный мир для двоих · сверхъестественный протокол</p>
+      <div class="rune-row">
+        <span>ᚨ</span><span>ᛟ</span><span>✶</span><span>ᛉ</span><span>ᚱ</span>
+      </div>
+
+      <!-- PORTALS GRID -->
+      <div class="portals-grid">
+        <a class="portal-card map-card" onclick="navigateTo('mapPage')">
+          <span class="portal-icon">🗺</span>
+          <div class="portal-name">Карта района</div>
+          <div class="portal-desc">Неоновые кварталы. Тайные зоны. Открывай новые пространства.</div>
+          <div class="portal-glow-bar"></div>
+        </a>
+        <a class="portal-card film-card" onclick="navigateTo('cinemaPage')">
+          <span class="portal-icon">🎬</span>
+          <div class="portal-name">Один вечер — один фильм</div>
+          <div class="portal-desc">Брось кубик. Кубик решает. Смотрим вместе из разных мест.</div>
+          <div class="portal-glow-bar"></div>
+        </a>
+        <a class="portal-card" onclick="navigateTo('districtPage')">
+          <span class="portal-icon">🚶</span>
+          <div class="portal-name">Прогулка по кварталу</div>
+          <div class="portal-desc">Иммерсивный режим. Туман. Фонари. Задания на улице.</div>
+          <div class="portal-glow-bar"></div>
+        </a>
+        <a class="portal-card portal-18-card" onclick="navigateTo('portalPage')">
+          <span class="portal-icon">🔐</span>
+          <div class="portal-name">Тайный портал</div>
+          <div class="portal-desc">18+ Флирт, интрига, секретные миссии. Требуется код.</div>
+          <div class="portal-glow-bar"></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- PROGRESS -->
+    <div class="progress-section">
+      <div class="section-heading">ПРОГРЕСС ПУТИ</div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="mainProgressBar" style="width:0%"></div>
+      </div>
+      <div class="progress-labels">
+        <span>Начало пути</span>
+        <span id="progressPct">0%</span>
+        <span>Финал затмения</span>
+      </div>
+    </div>
+
+    <!-- DAILY ENERGY -->
+    <div class="energy-section">
+      <div class="energy-title">⚡ ЭНЕРГИЯ ДНЯ</div>
+      <div class="energy-slider-wrapper">
+        <div class="energy-labels">
+          <span>😴 Без сил</span>
+          <span>⚡ Полон энергии</span>
+        </div>
+        <input type="range" class="energy-slider" id="energySlider" min="1" max="10" value="5">
+        <div style="text-align:center; margin-top:12px">
+          <span class="energy-value" id="energyValue">5</span>
+          <span class="energy-emoji" id="energyEmoji">😊</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TODAY'S MISSIONS -->
+    <div class="missions-section">
+      <div class="section-heading">МИССИИ ДНЯ</div>
+      <div id="dailyMissions"></div>
+    </div>
+
+    <!-- FIRE -->
+    <div class="fire-section">
+      <div class="fire-title">🔥 НАШЕ ОБЩЕЕ ПЛАМЯ</div>
+      <div class="fire-canvas-wrapper">
+        <canvas id="fireCanvas"></canvas>
+      </div>
+      <div style="text-align:center;margin-top:8px;font-size:0.72rem;color:rgba(255,255,255,.35);letter-spacing:0.3em">
+        РАЗГОРАЕТСЯ ОТ АКТИВНОСТИ
+      </div>
+    </div>
+
+  </div><!-- /homePage -->
+
+  <!-- ── MAP PAGE ───────────────────────────────────────────────────────── -->
+  <div id="mapPage" class="app-page" style="display:none">
+    <button class="back-btn" onclick="navigateTo('homePage')">← НАЗАД</button>
+    <div class="map-page page-fade">
+      <h2>КАРТА РАЙОНА</h2>
+      <p class="page-subtitle">выбери зону · исследуй мир</p>
+      <canvas id="mapCanvas"></canvas>
+      <div class="map-legend">
+        <div class="map-legend-item"><div class="legend-dot" style="background:#7c3aed;box-shadow:0 0 6px #7c3aed"></div>Разблокировано</div>
+        <div class="map-legend-item"><div class="legend-dot" style="background:#444"></div>Закрыто</div>
+        <div class="map-legend-item"><div class="legend-dot" style="background:#f59e0b;box-shadow:0 0 6px #f59e0b"></div>Активная миссия</div>
+      </div>
+      <div id="zoneInfo" style="margin-top:24px;text-align:center;min-height:60px"></div>
+    </div>
+  </div>
+
+  <!-- ── DISTRICT / WALK PAGE ───────────────────────────────────────────── -->
+  <div id="districtPage" class="app-page" style="display:none">
+    <button class="back-btn" onclick="navigateTo('homePage')" style="z-index:200">← НАЗАД</button>
+    <div class="district-page">
+      <canvas id="walkCanvas"></canvas>
+      <div class="district-ui" style="position:fixed;top:60px;left:50%;transform:translateX(-50%)">
+        <div class="district-title" id="districtTitle">ПРОГУЛКА ПО КВАРТАЛУ</div>
+        <div style="text-align:center;font-size:0.7rem;color:rgba(255,255,255,.35);letter-spacing:0.3em">
+          нажми на светящиеся объекты
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CINEMA PAGE ────────────────────────────────────────────────────── -->
+  <div id="cinemaPage" class="app-page" style="display:none">
+    <button class="back-btn" onclick="navigateTo('homePage')">← НАЗАД</button>
+    <div class="cinema-page page-fade">
+      <h2>КИНОЗАЛ</h2>
+      <p class="page-subtitle" style="color:rgba(255,255,255,.35);letter-spacing:0.3em;font-size:0.78rem;margin-bottom:32px">один вечер · один фильм · один разговор</p>
+
+      <div class="cinema-scene" id="cinemaScene">
+        <div class="projector-beam"></div>
+        <canvas id="dustCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+        <div class="cinema-screen">
+          <div class="cinema-screen-content" id="screenContent">
+            <div style="color:rgba(255,255,255,.3);font-size:0.8rem;letter-spacing:0.3em">БРОСЬ КУБИК</div>
+            <div style="color:rgba(255,255,255,.2);font-size:0.65rem;letter-spacing:0.2em;margin-top:8px">чтобы выбрать фильм</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cinema-seats-row">
+        <div class="cinema-seat active"></div>
+        <div class="cinema-seat"></div>
+        <div class="cinema-seat active"></div>
+        <div class="cinema-seat"></div>
+        <div class="cinema-seat active"></div>
+        <div class="cinema-seat"></div>
+        <div class="cinema-seat active"></div>
+        <div class="cinema-seat"></div>
+        <div class="cinema-seat active"></div>
+        <div class="cinema-seat"></div>
+        <div class="cinema-seat active"></div>
+      </div>
+
+      <div class="dice-container">
+        <canvas id="diceCanvas" width="180" height="180"></canvas>
+      </div>
+
+      <div class="cinema-btn-row">
+        <button class="btn-primary" id="rollBtn" onclick="rollDice()">🎲 БРОСИТЬ КУБИК</button>
+        <button class="btn-secondary" id="rerollBtn" onclick="rollDice()" style="display:none">↺ ПЕРЕБРОСИТЬ</button>
+      </div>
+
+      <div class="discussion-panel" id="discussionPanel" style="display:none">
+        <div class="discussion-title">💬 ТЕМЫ ДЛЯ РАЗГОВОРА</div>
+        <div id="discussionQuestions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PORTAL 18+ PAGE ────────────────────────────────────────────────── -->
+  <div id="portalPage" class="app-page" style="display:none">
+    <button class="back-btn" onclick="navigateTo('homePage')">← НАЗАД</button>
+    <div class="portal-page page-fade">
+
+      <div id="portalLock">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.5em;color:rgba(239,68,68,.6);margin-bottom:8px">ТАЙНЫЙ ПОРТАЛ</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,.3);letter-spacing:0.2em">доступ по секретному коду · 18+</div>
+        </div>
+        <div class="rune-circle-container">
+          <canvas id="runeCanvas" width="300" height="300"></canvas>
+        </div>
+        <form class="portal-code-form" onsubmit="unlockPortal();return false;">
+          <input type="text" name="username" autocomplete="username" style="display:none" value="portal18">
+          <input type="password" id="portalCodeInput" placeholder="КОД" maxlength="8"
+                 autocomplete="current-password">
+          <button type="submit" class="portal-unlock-btn">РАЗРУШИТЬ ПЕЧАТЬ</button>
+          <div class="login-error" id="portalError">неверный код</div>
+        </form>
+      </div>
+
+      <div class="portal-inner" id="portalInner">
+        <div style="text-align:center;margin-bottom:40px">
+          <div style="font-size:2rem;margin-bottom:12px">🔓</div>
+          <div style="font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.4em;color:#f87171;text-shadow:0 0 20px rgba(239,68,68,.7)">ПЕЧАТЬ СЛОМАНА</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,.4);margin-top:8px;letter-spacing:0.2em">добро пожаловать в тайный мир</div>
+        </div>
+        <div id="flirtMissions"></div>
+        <div style="text-align:center;margin-top:30px">
+          <button class="btn-primary" style="border-color:rgba(239,68,68,.5);background:linear-gradient(135deg,rgba(139,0,0,.8),rgba(220,38,38,.6))" onclick="shuffleFlirtMissions()">
+            🔮 НОВЫЕ МИССИИ
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /mainContent -->
+
+<!-- ── MISSION POPUP (walk) ───────────────────────────────────────────────── -->
+<div class="mission-popup" id="missionPopup">
+  <div class="mission-popup-icon" id="popupIcon">✨</div>
+  <div class="mission-popup-title">НОВАЯ МИССИЯ</div>
+  <div class="mission-popup-text" id="popupText">текст миссии</div>
+  <div class="mission-popup-stars" id="popupStars">⭐ +2 звезды за выполнение</div>
+  <button class="btn-primary" onclick="completeMissionPopup()">✓ ВЫПОЛНЕНО</button>
+  <button class="btn-secondary" onclick="closeMissionPopup()">ПОЗЖЕ</button>
 </div>
 
-<div class="symbols">
-  ✶ ᛟ ᚨ ᛉ ✶
+<!-- ── COMET NOTIFICATION ─────────────────────────────────────────────────── -->
+<div class="comet-notification" id="cometNotification">
+  <button class="comet-close" onclick="document.getElementById('cometNotification').classList.remove('show')">✕</button>
+  <div class="comet-header">
+    <div class="comet-icon">☄️</div>
+    <div class="comet-title" id="cometTitle">КОМЕТА!</div>
+  </div>
+  <div class="comet-text" id="cometText">текст события</div>
 </div>
 
-<div class="sections">
-  <a href="map.html" class="portal">🗺 Карта района</a>
-  <a href="movies.html" class="portal">🎬 Один вечер — один фильм</a>
-  <a href="portal.html" class="portal">🔐 Тайный раздел</a>
+<!-- ── SYNC TIMER ─────────────────────────────────────────────────────────── -->
+<div class="sync-timer" id="syncTimer">
+  <div class="sync-label">⏳ до времени синхронизации</div>
+  <div class="sync-display" id="syncDisplay">21:00:00</div>
 </div>
 
+<!-- ── ZONE LOCKED NOTIFICATION ──────────────────────────────────────────── -->
+<div id="zoneLockNotif" style="
+  display:none;position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  background:rgba(5,2,20,.97);border:1px solid rgba(168,85,247,.4);
+  border-radius:20px;padding:32px;text-align:center;z-index:500;
+  backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(168,85,247,.2);
+  max-width:320px;width:90vw;
+">
+  <div style="font-size:2rem;margin-bottom:16px">🔒</div>
+  <div style="font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.4em;color:rgba(168,85,247,.8);margin-bottom:12px">ЗОНА ЗАКРЫТА</div>
+  <div style="font-size:0.85rem;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:20px" id="lockMessage">
+    Эта зона откроется, когда ты накопишь больше звёзд.
+  </div>
+  <button class="btn-secondary" onclick="document.getElementById('zoneLockNotif').style.display='none'">ПОНЯЛ</button>
 </div>
+
+<!-- ── SCRIPTS ───────────────────────────────────────────────────────────── -->
+<script src="js/core.js"></script>
+<script src="js/map.js"></script>
+<script src="js/cinema-portal.js"></script>
 
 <script>
-// ===== ПАРОЛЬ =====
-const SECRET_PASSWORD = "2525"; // <--- поставь свой пароль здесь
+/* ─── PASSWORDS ─────────────────────────────────────────────────────────── */
+const SECRET_PASSWORD = '2525';
+const PORTAL_PASSWORD = '1818';
 
-function checkPassword(){
-  const input = document.getElementById("passwordInput").value;
-  if(input === SECRET_PASSWORD){
-    document.getElementById("loginScreen").style.display="none";
-    document.getElementById("mainContent").style.display="block";
+/* ─── DAILY MISSIONS ────────────────────────────────────────────────────── */
+const ALL_MISSIONS = [
+  { id:'m1',  icon:'📸', text:'Сфотографируй что-нибудь красное вокруг тебя', stars:2 },
+  { id:'m2',  icon:'🍽️', text:'Пришли фото своего ужина или того, что ты ел', stars:2 },
+  { id:'m3',  icon:'🎤', text:'Отправь голосовое сообщение длительностью 30 секунд', stars:3 },
+  { id:'m4',  icon:'👃', text:'Опиши три запаха, которые ты чувствуешь сейчас', stars:2 },
+  { id:'m5',  icon:'😴', text:'Оцени свою усталость сегодня от 1 до 10 и объясни почему', stars:2 },
+  { id:'m6',  icon:'🌙', text:'Посмотри в окно и опиши, что видишь этой ночью', stars:2 },
+  { id:'m7',  icon:'💭', text:'Одна мысль, которая была со мной весь день', stars:3 },
+  { id:'m8',  icon:'🎵', text:'Пришли песню, которая сейчас в голове', stars:2 },
+  { id:'m9',  icon:'🤲', text:'Что ты держал в руках сегодня, что было важным?', stars:3 },
+  { id:'m10', icon:'⭐', text:'Назови три вещи, за которые ты благодарен сегодня', stars:3 },
+  { id:'m11', icon:'🏃', text:'Опиши самый активный момент своего дня', stars:2 },
+  { id:'m12', icon:'😊', text:'Что тебя улыбнуло сегодня? Хоть что-то маленькое.', stars:2 },
+];
+
+function getTodayMissions() {
+  // Seed based on date for consistent daily set
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+  const shuffled = [...ALL_MISSIONS].sort((a, b) => {
+    const ha = Math.sin(seed + a.id.charCodeAt(1)) * 10000;
+    const hb = Math.sin(seed + b.id.charCodeAt(1)) * 10000;
+    return (ha - Math.floor(ha)) - (hb - Math.floor(hb));
+  });
+  return shuffled.slice(0, 4);
+}
+
+function renderDailyMissions() {
+  const container = document.getElementById('dailyMissions');
+  if (!container) return;
+  const missions = getTodayMissions();
+  container.innerHTML = '';
+  missions.forEach(m => {
+    const done = window.gameState.completedMissions.includes(m.id);
+    const div = document.createElement('div');
+    div.className = 'mission-card' + (done ? ' completed' : '');
+    div.innerHTML = `
+      <span class="mission-icon">${m.icon}</span>
+      <div class="mission-info">
+        <div class="mission-name">${m.text}</div>
+        <div class="mission-reward">⭐ +${m.stars} звезды</div>
+      </div>
+    `;
+    if (!done) div.onclick = () => completeDailyMission(m, div);
+    container.appendChild(div);
+  });
+}
+
+function completeDailyMission(mission, el) {
+  if (window.gameState.completedMissions.includes(mission.id)) return;
+  window.gameState.completedMissions.push(mission.id);
+  Z25.saveState(window.gameState);
+  Z25.addStars(mission.stars, mission.text.slice(0, 30) + '...');
+  el.classList.add('completed');
+  el.onclick = null;
+  updateProgress();
+  // Spawn particles from element
+  const rect = el.getBoundingClientRect();
+  Z25.spawnParticles(rect.left + rect.width/2, rect.top, 20, 'rgba(245,158,11,0.9)');
+}
+
+/* ─── AUTH ──────────────────────────────────────────────────────────────── */
+function checkPassword() {
+  const val = document.getElementById('passwordInput').value;
+  if (val === SECRET_PASSWORD) {
+    Z25.playEclipseTransition(() => {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      initMainContent();
+    });
   } else {
-    alert("Неверный пароль!");
+    const err = document.getElementById('loginError');
+    err.classList.add('show');
+    document.getElementById('passwordInput').classList.add('error');
+    setTimeout(() => {
+      err.classList.remove('show');
+      document.getElementById('passwordInput').classList.remove('error');
+    }, 2500);
+    // Shake input
+    document.getElementById('passwordInput').animate([
+      {transform:'translateX(-5px)'},{transform:'translateX(5px)'},
+      {transform:'translateX(-5px)'},{transform:'translateX(5px)'},
+      {transform:'translateX(0)'},
+    ], {duration:300});
   }
 }
 
-// ===== ТУМАН И АНИМАЦИЯ =====
-const canvas = document.getElementById("fog");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+/* ─── INIT MAIN ──────────────────────────────────────────────────────────── */
+function initMainContent() {
+  // Canvas backgrounds
+  Z25.initStars('starCanvas');
+  Z25.initFog('fogCanvas');
+  Z25.initFire('fireCanvas');
 
-let fogParticles = [];
+  // Star count
+  Z25.updateStarDisplay();
 
-for(let i=0;i<100;i++){
-  fogParticles.push({
-    x:Math.random()*canvas.width,
-    y:Math.random()*canvas.height,
-    size:Math.random()*50+20,
-    speed:Math.random()*0.5
+  // Moon phase
+  const phase = Z25.getMoonPhase();
+  ['moonPhaseIcon','moonPhaseSymbol'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = phase.symbol;
+  });
+  ['moonPhaseName','moonPhaseLabel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = phase.name;
+  });
+
+  // Energy slider
+  const slider = document.getElementById('energySlider');
+  if (slider) {
+    slider.value = window.gameState.energy;
+    updateEnergyDisplay(slider.value);
+    slider.addEventListener('input', e => {
+      window.gameState.energy = +e.target.value;
+      Z25.saveState(window.gameState);
+      updateEnergyDisplay(e.target.value);
+    });
+  }
+
+  // Daily missions
+  renderDailyMissions();
+
+  // Progress
+  updateProgress();
+
+  // Sync timer
+  Z25.startSyncTimer();
+
+  // Comet events
+  setTimeout(Z25.scheduleCometEvents, 30000);
+
+  // Show home
+  navigateTo('homePage');
+}
+
+function updateEnergyDisplay(val) {
+  const vEl = document.getElementById('energyValue');
+  const eEl = document.getElementById('energyEmoji');
+  const tEl = document.getElementById('topEnergyVal');
+  if (vEl) vEl.textContent = val;
+  if (eEl) eEl.textContent = Z25.getEnergyEmoji(+val);
+  if (tEl) tEl.textContent = val;
+}
+
+function updateProgress() {
+  const pct = Z25.getProgress();
+  const bar = document.getElementById('mainProgressBar');
+  const lbl = document.getElementById('progressPct');
+  if (bar) bar.style.width = pct + '%';
+  if (lbl) lbl.textContent = pct + '%';
+}
+
+/* ─── NAVIGATION ─────────────────────────────────────────────────────────── */
+let currentPage = 'homePage';
+let mapInstance = null;
+let walkInstance = null;
+let diceInstance = null;
+let runeInstance = null;
+
+function navigateTo(pageId) {
+  Z25.playEclipseTransition(() => {
+    document.querySelectorAll('.app-page').forEach(p => p.style.display = 'none');
+    const page = document.getElementById(pageId);
+    if (page) page.style.display = 'block';
+    currentPage = pageId;
+
+    // Hide sync timer & canvas on sub-pages
+    const syncEl = document.getElementById('syncTimer');
+    const show   = pageId === 'homePage';
+    if (syncEl) syncEl.style.display = show ? 'block' : 'none';
+
+    if (pageId === 'mapPage'      && !mapInstance)  initMapPage();
+    if (pageId === 'districtPage' && !walkInstance) initDistrictPage();
+    if (pageId === 'cinemaPage'   && !diceInstance) initCinemaPage();
+    if (pageId === 'portalPage'   && !runeInstance) initPortalPage();
   });
 }
 
-function drawFog(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle="rgba(150,150,255,0.05)";
-  fogParticles.forEach(p=>{
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
-    ctx.fill();
-    p.x+=p.speed;
-    if(p.x>canvas.width) p.x=0;
-  });
-  requestAnimationFrame(drawFog);
+/* ─── MAP PAGE ───────────────────────────────────────────────────────────── */
+function initMapPage() {
+  mapInstance = new DistrictMap('mapCanvas');
+
+  window.onZoneSelected = (zone) => {
+    const info = document.getElementById('zoneInfo');
+    if (!info) return;
+    info.innerHTML = `
+      <div style="font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.3em;color:${zone.color};margin-bottom:8px">${zone.icon} ${zone.name}</div>
+      <div style="font-size:0.8rem;color:rgba(255,255,255,.5);margin-bottom:16px">${zone.desc}</div>
+      <button class="btn-primary" onclick="enterZone(${zone.id})" style="font-size:0.7rem">
+        ВОЙТИ В ЗОНУ
+      </button>
+    `;
+    Z25.spawnParticles(window.innerWidth/2, window.innerHeight/2, 15, zone.color);
+  };
+
+  window.onZoneLocked = (zone) => {
+    const needed = (zone.id) * 15;
+    document.getElementById('lockMessage').innerHTML =
+      `Зона «${zone.name}» откроется, когда ты наберёшь <strong>${needed} звёзд</strong>.<br>У тебя: ${window.gameState.stars} ⭐`;
+    document.getElementById('zoneLockNotif').style.display = 'flex';
+    document.getElementById('zoneLockNotif').style.flexDirection = 'column';
+    document.getElementById('zoneLockNotif').style.alignItems = 'center';
+  };
 }
 
-drawFog();
+function enterZone(zoneId) {
+  navigateTo('districtPage');
+}
+
+/* ─── DISTRICT / WALK PAGE ───────────────────────────────────────────────── */
+function initDistrictPage() {
+  walkInstance = new WalkScene('walkCanvas');
+
+  window.showWalkMission = (mission) => {
+    const popup = document.getElementById('missionPopup');
+    document.getElementById('popupIcon').textContent  = mission.icon;
+    document.getElementById('popupText').textContent  = mission.text;
+    document.getElementById('popupStars').textContent = `⭐ +${mission.stars} звезды за выполнение`;
+    popup.dataset.stars = mission.stars;
+    popup.dataset.text  = mission.text;
+    popup.classList.add('show');
+  };
+}
+
+let pendingMissionStars = 0;
+function completeMissionPopup() {
+  const popup = document.getElementById('missionPopup');
+  const stars = +popup.dataset.stars || 2;
+  Z25.addStars(stars, 'УЛИЧНАЯ МИССИЯ');
+  closeMissionPopup();
+  Z25.spawnParticles(window.innerWidth/2, window.innerHeight*0.7, 30, 'rgba(245,158,11,0.9)');
+}
+function closeMissionPopup() {
+  document.getElementById('missionPopup').classList.remove('show');
+}
+
+/* ─── CINEMA PAGE ────────────────────────────────────────────────────────── */
+function initCinemaPage() {
+  diceInstance = new DiceRenderer('diceCanvas');
+  initDustParticles();
+}
+
+function initDustParticles() {
+  const canvas = document.getElementById('dustCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  canvas.width = W; canvas.height = H;
+  const dust = Array.from({length:50}, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: Math.random() * 1.5 + 0.3,
+    vy: -(Math.random() * 0.3 + 0.1),
+    vx: (Math.random() - 0.5) * 0.2,
+    alpha: Math.random() * 0.3 + 0.05,
+  }));
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    dust.forEach(d => {
+      // Only in the projector beam area
+      const beamLeft  = W * 0.35, beamRight = W * 0.65;
+      const inBeam    = d.x > beamLeft && d.x < beamRight;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,220,100,${inBeam ? d.alpha * 2 : d.alpha * 0.3})`;
+      ctx.fill();
+      d.x += d.vx; d.y += d.vy;
+      if (d.y < 0) { d.y = H; d.x = Math.random() * W; }
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+let isRolling = false;
+function rollDice() {
+  if (isRolling) return;
+  isRolling = true;
+  const btn = document.getElementById('rollBtn');
+  btn.disabled = true;
+  btn.textContent = '🎲 Бросаю...';
+
+  // Fade screen to black
+  const scene = document.getElementById('cinemaScene');
+  scene.style.transition = 'opacity 0.4s';
+  scene.style.opacity = '0.2';
+
+  diceInstance.spin((filmIdx) => {
+    const film = FILMS[filmIdx % FILMS.length];
+    setTimeout(() => {
+      scene.style.opacity = '1';
+      showFilm(film);
+      isRolling = false;
+      btn.disabled = false;
+      btn.textContent = '🎲 БРОСИТЬ КУБИК';
+      document.getElementById('rerollBtn').style.display = 'inline-block';
+      // Add to history
+      window.gameState.filmHistory.push(film.title);
+      Z25.addStars(2, 'КИНОЗАЛ — ВЫБРАН ФИЛЬМ');
+    }, 300);
+  });
+}
+
+function showFilm(film) {
+  const content = document.getElementById('screenContent');
+  content.innerHTML = `
+    <div class="cinema-film-title">${film.title}</div>
+    <div class="cinema-film-genre">${film.genre} · ${film.year}</div>
+    <div class="cinema-film-desc">${film.desc}</div>
+  `;
+  const panel = document.getElementById('discussionPanel');
+  panel.style.display = 'block';
+  const q = document.getElementById('discussionQuestions');
+  q.innerHTML = film.questions.map(question =>
+    `<div class="discussion-question">${question}</div>`
+  ).join('');
+}
+
+/* ─── PORTAL 18+ PAGE ────────────────────────────────────────────────────── */
+const FLIRT_MISSIONS = [
+  { type:'ФЛИРТ',    icon:'💋', text:'Опиши мне то место, где тебе сейчас хочется быть — со мной.', stars:5 },
+  { type:'ИНТРИГА',  icon:'🔮', text:'Три вещи, которые ты хочешь сделать со мной при встрече. Не говори сразу — по одной в день.', stars:5 },
+  { type:'ЖЕЛАНИЕ',  icon:'🌹', text:'Запиши или произнеси вслух, что именно ты хочешь. Отправь голосовым.', stars:6 },
+  { type:'ИГРА',     icon:'🎯', text:'Правда или действие — задаю вопрос. Ответь честно: что тебя заводит во мне больше всего?', stars:5 },
+  { type:'НЕЖНОСТЬ', icon:'🕯️', text:'Зажги свечу. Смотри на огонь 2 минуты. Думай обо мне. Потом напиши одно слово.', stars:4 },
+  { type:'СЕКРЕТ',   icon:'🗝️', text:'Расскажи мне фантазию, о которой никому не говорил.', stars:7 },
+  { type:'ОЖИДАНИЕ', icon:'⏳', text:'До следующей встречи: каждый день утром напоминай себе, что я думаю о тебе. Каждый день.', stars:4 },
+  { type:'ГОЛОС',    icon:'🎙️', text:'Отправь голосовое сообщение. Скажи мне то, что боишься написать текстом.', stars:6 },
+  { type:'ТЕПЛО',    icon:'🔥', text:'Напиши 5 конкретных вещей, которые ты хочешь, чтобы я сделала при встрече.', stars:5 },
+  { type:'ЗНАК',     icon:'✨', text:'Слепой выбор: A, B или C? Не спрашивай что значит — просто выбери. Узнаешь при встрече.', stars:5 },
+  { type:'МИССИЯ',   icon:'🌙', text:'Ночная миссия: перед сном пришли мне сообщение — «я думал о тебе сегодня» + один момент дня.', stars:4 },
+  { type:'СОБЛАЗН',  icon:'🍷', text:'Налей себе что-нибудь вкусное. Сделай глоток. Представь, что я рядом. Опиши это ощущение.', stars:5 },
+];
+
+function initPortalPage() {
+  runeInstance = new RuneCircle('runeCanvas');
+  if (window.gameState.portalUnlocked) {
+    showPortalInner();
+  }
+}
+
+function unlockPortal() {
+  const val = document.getElementById('portalCodeInput').value;
+  if (val === PORTAL_PASSWORD) {
+    runeInstance.startCrack(() => {
+      setTimeout(() => {
+        window.gameState.portalUnlocked = true;
+        Z25.saveState(window.gameState);
+        Z25.addStars(10, 'ТАЙНЫЙ ПОРТАЛ ОТКРЫТ');
+        showPortalInner();
+      }, 500);
+    });
+  } else {
+    const err = document.getElementById('portalError');
+    err.classList.add('show');
+    setTimeout(() => err.classList.remove('show'), 2500);
+    document.getElementById('portalCodeInput').animate([
+      {transform:'translateX(-6px)'},{transform:'translateX(6px)'},
+      {transform:'translateX(-6px)'},{transform:'translateX(0)'},
+    ], {duration:300});
+  }
+}
+
+function showPortalInner() {
+  document.getElementById('portalLock').style.display = 'none';
+  document.getElementById('portalInner').classList.add('visible');
+  renderFlirtMissions();
+}
+
+function renderFlirtMissions() {
+  const container = document.getElementById('flirtMissions');
+  if (!container) return;
+  const missions = shuffleArray([...FLIRT_MISSIONS]).slice(0, 6);
+  container.innerHTML = missions.map(m => `
+    <div class="flirt-mission-card">
+      <div class="flirt-card-type">${m.icon} ${m.type}</div>
+      <div class="flirt-card-text">${m.text}</div>
+      <div class="flirt-card-reward">⭐ +${m.stars} звёзд за выполнение · <button class="btn-primary" style="padding:6px 14px;font-size:0.65rem" onclick="completeFlirt(${m.stars}, this)">ВЫПОЛНЕНО</button></div>
+    </div>
+  `).join('');
+}
+
+function completeFlirt(stars, btn) {
+  Z25.addStars(stars, 'ТАЙНАЯ МИССИЯ');
+  btn.textContent = '✓ ЗАСЧИТАНО';
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  btn.closest('.flirt-mission-card').style.opacity = '0.6';
+  Z25.spawnParticles(window.innerWidth/2, window.innerHeight/2, 25, 'rgba(239,68,68,0.9)');
+}
+
+function shuffleFlirtMissions() {
+  renderFlirtMissions();
+  Z25.spawnParticles(window.innerWidth/2, window.innerHeight/2, 20, 'rgba(192,132,252,0.9)');
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* ─── ZONE LOCKED DIALOG ────────────────────────────────────────────────── */
+document.getElementById('zoneLockNotif').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+});
 </script>
 
 </body>
